@@ -1,108 +1,88 @@
-# 265 low - 636 high
-counter = 1
+# 265 low - 271 right answer to another person - 636 high
 def main():
-    global counter
     safe_reports_count = 0
     with open('input.txt', 'r') as file:
-        
         for line in file:
             report_list = line.strip().split(' ')
             report_list = [int(item) for item in report_list]
-            
-            
 
-            if (check_consistency(report_list, True) and check_graduality(report_list, True)):
+            total_problems_list = check_consistency(report_list).union(check_graduality(report_list)) 
+            
+            if len(total_problems_list) == 0:
                 safe_reports_count = safe_reports_count + 1
-                # if counter == 678:
-                #     print('raro 1 ')
-                # if counter == 754:
-                #     print('raro 2')
-            counter = counter + 1
+            elif len(total_problems_list) == 1:
+                if problem_dampener_saves(report_list):
+                    safe_reports_count = safe_reports_count + 1
+                # elif problem_dampener_saves(report_list, next(iter(total_problems_list)) + 1):
+                #     safe_reports_count = safe_reports_count + 1
+            
     print(safe_reports_count)
 
 
-def check_consistency(report_list, is_first_run):
-    global counter
+def check_consistency(report_list):
+    problem_ids = set()
     defined_mode = None
-    dampener_saved = False
+    first_valid_iteration = 0
+    
     for i in range(len(report_list) - 1):
-        
         if report_list[i] < report_list[i + 1]:
-            
             current_mode = 'increasing'
         elif report_list[i] == report_list[i + 1]:
+            problem_ids.add(i) # If it isnt increasing nor decrasing, it is unsafe
+            if defined_mode == None:
+                first_valid_iteration = first_valid_iteration + 1
+        else:
+            current_mode = 'decreasing'
         
-            if not is_first_run:
-                return False
-            
-            # print('hmmm')
+        if i == first_valid_iteration:
+            defined_mode = current_mode
+        else:
+            if defined_mode == None or defined_mode != current_mode:
+                problem_ids.add(i)
+    return problem_ids
 
-            if is_first_run and not dampener_saved:
-                if does_problem_dampener_saves(report_list, i):
-                    dampener_saved = True
+def check_graduality(report_list):
+    problem_ids = set()
+    for i in range(len(report_list) - 1):
+        diff_adjacent = abs(report_list[i] - report_list[i + 1])
+        if not(diff_adjacent >= 1 and diff_adjacent <= 3):
+            problem_ids.add(i)
+    return problem_ids
 
-                    # edge case: first 2 items are equal so mode is not defined.
-                    if len(report_list) >= i + 3: # 3 for one more of the i+2
-                        if report_list[i + 1] < report_list[i + 2]:
-                            current_mode = 'increasing'
-                            # print("line: " + str(counter))
-                        elif report_list[i] == report_list[i + 1]:
-                            return False # Cannot save from two equal values more than once
-                            # print("line: " + str(counter))
-                        else:
-                            current_mode = 'decreasing'
-                else:
-                    return False
-            else:
-                return False   
-            
 
+def problem_dampener_saves (report_list):
+    for i in range(len(report_list)):
+        report_list_copy = report_list.copy()
+        report_list_copy.pop(i)
+        
+        if check_consistency_og(report_list_copy) and check_graduality_og(report_list_copy):
+            return True
+        
+    return False
+
+
+def check_consistency_og(report_list):
+    defined_mode = None
+    for i in range(len(report_list) - 1):
+        if report_list[i] < report_list[i + 1]:
+            current_mode = 'increasing'
+        elif report_list[i] == report_list[i + 1]:
+            return False # If it isnt increasing nor decrasing, it is unsafe
         else:
             current_mode = 'decreasing'
         
         if i == 0:
             defined_mode = current_mode
-            # if counter== 678:
-            #     print(i, report_list[i], report_list[i + 1], defined_mode, current_mode)
         else:
-            # if counter== 678:
-            #     print(i, report_list[i], report_list[i + 1], defined_mode, current_mode)
             if defined_mode != current_mode:
-                if is_first_run and not dampener_saved:
-                    if does_problem_dampener_saves(report_list, i):
-                        dampener_saved = True
-                    else:
-                        return False
-                else:
-                    return False
+                return False
     return True
 
-def check_graduality(report_list, is_first_run):
-    dampener_saved = False
+def check_graduality_og(report_list):
     for i in range(len(report_list) - 1):
         diff_adjacent = abs(report_list[i] - report_list[i + 1])
         if not(diff_adjacent >= 1 and diff_adjacent <= 3):
-        
-            if is_first_run and not dampener_saved:
-                if does_problem_dampener_saves(report_list, i):
-                    dampener_saved = True
-                else:
-                    return False
-            else:
-                return False           
+            return False
     return True
-
-# removes one level of the report (element of the list) to check if then the report is safe
-def does_problem_dampener_saves (report_list, index):
-    report_list_copy = report_list.copy()
-    report_list_copy.pop(index)
-
-    # if counter == 678:
-    #     print(report_list_copy)
-
-    if (check_consistency(report_list_copy, False) and check_graduality(report_list_copy, False)):
-        return True
-    else:
-        return False
 
 main()
